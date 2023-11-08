@@ -16,6 +16,8 @@
 		FD79D1002AF9591E0053F69B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FD79D0FF2AF9591E0053F69B /* LaunchScreen.storyboard */; };
 		FD79D1022AF9592C0053F69B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FD79D1012AF9592C0053F69B /* Assets.xcassets */; };
 		FD79D1062AF9599B0053F69B /* MovieQuizViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD79D1052AF9599B0053F69B /* MovieQuizViewController.swift */; };
+		FD8FD40E2AFC1F9400348884 /* YS Display-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FD79D1042AF959330053F69B /* YS Display-Medium.ttf */; };
+		FD8FD40F2AFC1F9800348884 /* YS Display-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FD79D1032AF959330053F69B /* YS Display-Bold.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -132,7 +134,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1330;
-				LastUpgradeCheck = 1330;
+				LastUpgradeCheck = 1500;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
 					AD1ABAAD2831907B00B3E448 = {
@@ -164,6 +166,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD79D1002AF9591E0053F69B /* LaunchScreen.storyboard in Resources */,
+				FD8FD40E2AFC1F9400348884 /* YS Display-Medium.ttf in Resources */,
+				FD8FD40F2AFC1F9800348884 /* YS Display-Bold.ttf in Resources */,
 				FD79D1022AF9592C0053F69B /* Assets.xcassets in Resources */,
 				FD79D0FE2AF959030053F69B /* Main.storyboard in Resources */,
 			);
@@ -224,6 +228,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -284,6 +289,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
