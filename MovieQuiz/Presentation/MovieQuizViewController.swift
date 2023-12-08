@@ -1,6 +1,6 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
+final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - IBOutlets
     @IBOutlet private var counterLabel: UILabel!
@@ -13,18 +13,29 @@ final class MovieQuizViewController: UIViewController {
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
     private let questionsAmount = 10
-    private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
+    private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
-
-    
+    private var alert: AlertPresenter?
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        questionFactory = QuestionFactory(delegate: self)
+        questionFactory?.requestNextQuestion()
+        alert = AlertPresenter(viewContoller: self)
         imageView.layer.cornerRadius = 20
-        if let firstQuestion = questionFactory.requestNextQuestion() {
-            currentQuestion = firstQuestion
-            show(quiz: convert(model: firstQuestion))
+        
+    }
+    
+    // MARK: - QuestionFactoryDelegate
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+            return
+        }
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: viewModel)
         }
     }
     
@@ -44,7 +55,7 @@ final class MovieQuizViewController: UIViewController {
     }
     
     // MARK: - Private Methods
-    // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
+    
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
         let questionStep = QuizStepViewModel(
             image: UIImage(named: model.image) ?? UIImage(),
@@ -62,36 +73,28 @@ final class MovieQuizViewController: UIViewController {
         disableButtons(false)
     }
     
-    private func show(quiz result: QuizResultsViewModel) {
-        let alert = UIAlertController(
-            title: result.title,
-            message: result.text,
-            preferredStyle: .alert)
-        
-        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
-            guard let self = self else { return }
-            self.currentQuestionIndex = 0
-            self.correctAnswers = 0
-            guard let currentQuestion = currentQuestion else { return }
-            show(quiz: convert(model: currentQuestion))
-        }
-        alert.addAction(action)
-        self.present(alert, animated: true)
+    private func restart() {
+        currentQuestionIndex = 0
+        correctAnswers = 0
+        questionFactory?.requestNextQuestion()
     }
     
+    
     private func showNextQuestionOrResults() {
-        guard let nextQuestion = questionFactory.requestNextQuestion() else { return }
-        currentQuestion = nextQuestion
+        
         if currentQuestionIndex == questionsAmount - 1 {
-            show(quiz: .init(
-                title:  "Этот раунд окончен!",
-                text: correctAnswers == questionsAmount ?
-                "Поздравляем, вы ответили на \(questionsAmount) из \(questionsAmount)!" :
-                "Вы ответили на \(correctAnswers) из \(questionsAmount), попробуйте ещё раз!",
-                buttonText: "Сыграть ещё раз"))
+            let title = "Этот раунд окончен!"
+            let message = correctAnswers == questionsAmount ?
+            "Поздравляем, вы ответили на \(questionsAmount) из \(questionsAmount)!" :
+            "Вы ответили на \(correctAnswers) из \(questionsAmount), попробуйте ещё раз!"
+            let buttonText = "Сыграть ещё раз"
+            
+            if let alert {
+                alert.requestAlert(alertModel: AlertModel(title: title, message: message, buttonText: buttonText, completion: restart))
+            }
         } else {
             currentQuestionIndex += 1
-            show(quiz: convert(model: nextQuestion))
+            questionFactory?.requestNextQuestion()
         }
     }
     
