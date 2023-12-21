@@ -25,7 +25,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         questionFactory = QuestionFactory(delegate: self)
         questionFactory?.requestNextQuestion()
         alert = AlertPresenter(viewContoller: self)
-       statisticService = StatisticServiceImplementation()
+        statisticService = StatisticServiceImplementation()
         
     }
     
@@ -86,7 +86,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
               let bestGameCorrect = statisticService?.bestGame.correct,
               let bestGameTotal = statisticService?.bestGame.total,
               let bestGameDate = statisticService?.bestGame.date.dateTimeString,
-              let bestGameTotalAccuracy = statisticService?.totalAccuracy
+              let totalAccuracy = statisticService?.totalAccuracy
         else {
             return
         }
@@ -97,10 +97,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             Ваш результат: \(correctAnswers)/\(questionsAmount)
             Количество сыгранных квизов: \(gamesCount)
             Рекорд: \(bestGameCorrect)/\(bestGameTotal) (\(bestGameDate))
-            Средняя точноcть: \(String(format: "%.2f", bestGameTotalAccuracy))%
+            Средняя точноcть: \(String(format: "%.2f", totalAccuracy))%
             """
             let buttonText = "Сыграть ещё раз"
-    
+            
             if let alert {
                 alert.requestAlert(alertModel: AlertModel(title: title, message: message, buttonText: buttonText, completion: restart))
             }

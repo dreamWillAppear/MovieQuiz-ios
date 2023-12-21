@@ -9,7 +9,7 @@ class AlertPresenter {
     }
     
     func requestAlert(alertModel: AlertModel) {
-
+        
         let alert = UIAlertController(title: alertModel.title,
                                       message: alertModel.message,
                                       preferredStyle: .alert)

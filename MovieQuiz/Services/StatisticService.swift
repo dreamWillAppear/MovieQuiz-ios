@@ -73,7 +73,6 @@ final class StatisticServiceImplementation: StatisticServiceProtocol {
             bestGame = currentGame
         }
     }
-    
     //отладочная функция для сброса статистики
     func resetStatistic() {
         userDefaults.removeObject(forKey: Keys.correct.rawValue)
