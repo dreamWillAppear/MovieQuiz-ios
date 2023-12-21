@@ -16,14 +16,16 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alert: AlertPresenter?
+    private var statisticService: StatisticServiceProtocol?
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        imageView.layer.cornerRadius = 20
         questionFactory = QuestionFactory(delegate: self)
         questionFactory?.requestNextQuestion()
         alert = AlertPresenter(viewContoller: self)
-        imageView.layer.cornerRadius = 20
+       statisticService = StatisticServiceImplementation()
         
     }
     
@@ -42,14 +44,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     // MARK: - IBActions
     @IBAction private func yesButtonClicked(_ sender: Any) {
         guard let currentQuestion = currentQuestion else { return }
-      //отладочное  print(currentQuestion.correctAnswer, currentQuestion.image.description)
         let givenAnswer = true
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
     
     @IBAction private func noButtonClicked(_ sender: Any) {
         guard let currentQuestion = currentQuestion else { return }
-     //отладочное   print(currentQuestion.correctAnswer, currentQuestion.image.description)
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
@@ -82,13 +82,25 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     private func showNextQuestionOrResults() {
         
+        guard let gamesCount = statisticService?.gamesCount,
+              let bestGameCorrect = statisticService?.bestGame.correct,
+              let bestGameTotal = statisticService?.bestGame.total,
+              let bestGameDate = statisticService?.bestGame.date.dateTimeString,
+              let bestGameTotalAccuracy = statisticService?.totalAccuracy
+        else {
+            return
+        }
         if currentQuestionIndex == questionsAmount - 1 {
+            statisticService?.store(correct: correctAnswers, total: questionsAmount)
             let title = "Этот раунд окончен!"
-            let message = correctAnswers == questionsAmount ?
-            "Поздравляем, вы ответили на \(questionsAmount) из \(questionsAmount)!" :
-            "Вы ответили на \(correctAnswers) из \(questionsAmount), попробуйте ещё раз!"
+            let message = """
+            Ваш результат: \(correctAnswers)/\(questionsAmount)
+            Количество сыгранных квизов: \(gamesCount)
+            Рекорд: \(bestGameCorrect)/\(bestGameTotal) (\(bestGameDate))
+            Средняя точноcть: \(String(format: "%.2f", bestGameTotalAccuracy))%
+            """
             let buttonText = "Сыграть ещё раз"
-            
+    
             if let alert {
                 alert.requestAlert(alertModel: AlertModel(title: title, message: message, buttonText: buttonText, completion: restart))
             }
