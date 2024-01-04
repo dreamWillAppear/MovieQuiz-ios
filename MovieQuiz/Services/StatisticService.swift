@@ -72,6 +72,7 @@ final class StatisticServiceImplementation: StatisticServiceProtocol {
         if currentGame.isBetterThan(bestGame) {
             bestGame = currentGame
         }
+
     }
     //отладочная функция для сброса статистики
     func resetStatistic() {
@@ -80,6 +81,6 @@ final class StatisticServiceImplementation: StatisticServiceProtocol {
         userDefaults.removeObject(forKey: Keys.bestGame.rawValue)
         userDefaults.removeObject(forKey: Keys.gamesCount.rawValue)
     }
-    
+
 }
 
