@@ -1,6 +1,6 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
+final class MovieQuizViewController: UIViewController {
 
     // MARK: - IBOutlets
     @IBOutlet private var counterLabel: UILabel!
@@ -11,22 +11,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     @IBOutlet private var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - Private Properties
-    private var presenter = MovieQuizPresenter()
-    private var questionFactory: QuestionFactoryProtocol?
+    private var presenter: MovieQuizPresenter!
     private var alert: AlertPresenter?
     private var statisticService: StatisticServiceProtocol?
-    var correctAnswers = 0
-  //  private var alertPresenter = AlertPresenter()
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        presenter.viewController = self
+        presenter = MovieQuizPresenter(viewController: self)
         imageView.layer.cornerRadius = 20
         alert = AlertPresenter(viewController: self)
         statisticService = StatisticServiceImplementation()
-        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         showLoadingIndicator()
-        questionFactory?.loadData()
     }
     
     // MARK: - Public Methods
@@ -80,11 +76,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
         
         if presenter.isLastQuestion() {
-            statisticService?.store(correct: correctAnswers, total: presenter.questionsAmount)
-            statisticService?.store(correct: correctAnswers, total: presenter.questionsAmount)
+            statisticService?.store(correct: presenter.correctAnswers, total: presenter.questionsAmount)
+            statisticService?.store(correct: presenter.correctAnswers, total: presenter.questionsAmount)
             let title = "Этот раунд окончен!"
             let message = """
-            Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
+            Ваш результат: \(presenter.correctAnswers)/\(presenter.questionsAmount)
             Количество сыгранных квизов: \(gamesCount)
             Рекорд: \(bestGameCorrect)/\(bestGameTotal) (\(bestGameDate))
             Средняя точноcть: \(String(format: "%.2f", totalAccuracy))%
@@ -96,7 +92,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             }
         } else {
             presenter.switchToNextQuestion()
-            questionFactory?.requestNextQuestion()
+            presenter.questionFactory?.requestNextQuestion()
         }
     }
     
@@ -108,7 +104,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         presenter.didAnswer(isCorrect: isCorrect)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
-            self.presenter.questionFactory = self.questionFactory
             self.presenter.showNextQuestionOrResults()
         }
     }
@@ -123,16 +118,16 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
     
-    private func showLoadingIndicator() {
+    internal func showLoadingIndicator() {
         activityIndicator.isHidden = false
         activityIndicator.startAnimating()
     }
     
-    private func hideLoadingIndicator() {
+    internal func hideLoadingIndicator() {
         activityIndicator.isHidden = true
     }
     
-    private func showNetworkError(message: String) {
+    internal func showNetworkError(message: String) {
         hideLoadingIndicator()
         
         let model = AlertModel(title: "Ошибка",
@@ -145,14 +140,5 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         
         alert?.requestAlert(alertModel: model)
     }
-    
-    func didLoadDataFromServer() {
-        activityIndicator.isHidden = true
-        questionFactory?.requestNextQuestion()
-    }
-    
-    func didFailToLoadData(with error: Error) {
-        showNetworkError(message: error.localizedDescription)
-    }
-    
+
 }

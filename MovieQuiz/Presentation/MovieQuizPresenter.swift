@@ -1,16 +1,54 @@
 import UIKit
 
-class MovieQuizPresenter/*: QuestionFactoryDelegate*/ {
+class MovieQuizPresenter: QuestionFactoryDelegate {
     
     // MARK: - Public Properties
-    internal weak var viewController: MovieQuizViewController?
+    private weak var viewController: MovieQuizViewController?
     internal let questionsAmount = 10
     internal var currentQuestion: QuizQuestion?
     internal var correctAnswers = 0
+    internal var currentQuestionIndex = 0
+    internal var questionFactory: QuestionFactoryProtocol?
+    
+    init(viewController: MovieQuizViewController) {
+        self.viewController = viewController
+        
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+        questionFactory?.loadData()
+        viewController.showLoadingIndicator()
+    }
+    
+    // MARK: - QuestionFactoryDelegate
+    internal func didLoadDataFromServer() {
+        viewController?.hideLoadingIndicator()
+        questionFactory?.requestNextQuestion()
+    }
+    
+    internal func didFailToLoadData(with error: Error) {
+        let message = error.localizedDescription
+        viewController?.showNetworkError(message: message)
+    }
+    
+    internal func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+            return
+        }
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            self?.viewController?.show(quiz: viewModel)
+        }
+    }
+    
+    internal func restartGame() {
+        currentQuestionIndex = 0
+        correctAnswers = 0
+        questionFactory?.requestNextQuestion()
+    }
+    
     // MARK: - IBOutlet
     // MARK: - Private Properties
-     var currentQuestionIndex = 0
-    var questionFactory: QuestionFactoryProtocol?
+    
     private let statisticService: StatisticServiceProtocol = StatisticServiceImplementation()
     // MARK: - Public Methods
     internal func yesButtonClicked() {
@@ -37,53 +75,36 @@ class MovieQuizPresenter/*: QuestionFactoryDelegate*/ {
         currentQuestionIndex += 1
     }
     
-    internal func restartGame() {
-        currentQuestionIndex = 0
-        correctAnswers = 0
-        questionFactory?.requestNextQuestion()
-    }
-    
-    internal func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else {
-            return
-        }
-        currentQuestion = question
-        let viewModel = convert(model: question)
-        DispatchQueue.main.async { [weak self] in
-            self?.viewController?.show(quiz: viewModel)
-        }
-    }
-    
     internal func showNextQuestionOrResults() {
         if isLastQuestion() {
-
-                  let text = "Вы ответили на \(correctAnswers) из 10, попробуйте еще раз!"
-                  
-                  let viewModel = QuizResultsViewModel(title: "Этот раунд окончен!",
-                                                       text: text,
-                                                       buttonText: "Сыграть ещё раз?")
-                  viewController?.show(quiz: viewModel)
-              } else {
-                  switchToNextQuestion()
-                  questionFactory?.requestNextQuestion()
-              }
-       }
+            
+            let text = "Вы ответили на \(correctAnswers) из 10, попробуйте еще раз!"
+            
+            let viewModel = QuizResultsViewModel(title: "Этот раунд окончен!",
+                                                 text: text,
+                                                 buttonText: "Сыграть ещё раз?")
+            viewController?.show(quiz: viewModel)
+        } else {
+            switchToNextQuestion()
+            questionFactory?.requestNextQuestion()
+        }
+    }
     
     internal func makeResultMessage() -> String {
-            statisticService.store(correct: correctAnswers, total: questionsAmount)
-            let message = """
+        statisticService.store(correct: correctAnswers, total: questionsAmount)
+        let message = """
             Ваш результат: \(correctAnswers)/\(questionsAmount)
             Количество сыгранных квизов: \(statisticService.gamesCount)
             Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total)(\(statisticService.bestGame.date.dateTimeString))
             Среедняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
             """
-            return message
-        }
+        return message
+    }
     
     internal func didAnswer(isCorrect: Bool) {
         if (isCorrect) { correctAnswers += 1 }
     }
-
+    
     // MARK: - IBAction
     // MARK: - Private Methods
     private func didAnswer(givenAnswer: Bool) {
