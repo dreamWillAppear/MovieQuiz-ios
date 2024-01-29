@@ -15,13 +15,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private var questionFactory: QuestionFactoryProtocol?
     private var alert: AlertPresenter?
     private var statisticService: StatisticServiceProtocol?
-    
+    var correctAnswers = 0
+  //  private var alertPresenter = AlertPresenter()
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         presenter.viewController = self
         imageView.layer.cornerRadius = 20
-        alert = AlertPresenter(viewContoller: self)
+        alert = AlertPresenter(viewController: self)
         statisticService = StatisticServiceImplementation()
         questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         showLoadingIndicator()
@@ -37,9 +38,22 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         disableButtons(false)
     }
     
-    
-    
-    
+    internal  func show(quiz result: QuizResultsViewModel) {
+        let message = presenter.makeResultMessage()
+        
+        let alertId = "GameResult"
+        let alertModel = AlertModel(title: result.title,
+                                    message: message,
+                                    buttonText: result.buttonText,
+                                    id: alertId)
+        { [weak self] in
+            guard let self = self else { return }
+            
+            self.presenter.restartGame()
+        }
+        alert?.requestAlert(alertModel: alertModel)
+    }
+        
     internal func didReceiveNextQuestion(question: QuizQuestion?) {
         presenter.didReceiveNextQuestion(question: question)
     }
@@ -54,10 +68,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     // MARK: - Private Methods
-
-    
-    
-    
     private func showNextQuestionOrResults() {
         
         guard let gamesCount = statisticService?.gamesCount,
@@ -82,7 +92,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             let buttonText = "Сыграть ещё раз"
             let id = "AlertGameResult"
             if let alert {
-                alert.requestAlert(alertModel: AlertModel(title: title, message: message, buttonText: buttonText, id: id, completion: restart))
+                alert.requestAlert(alertModel: AlertModel(title: title, message: message, buttonText: buttonText, id: id, completion: presenter.restartGame))
             }
         } else {
             presenter.switchToNextQuestion()

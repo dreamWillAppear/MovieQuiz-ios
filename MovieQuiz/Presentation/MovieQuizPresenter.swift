@@ -9,16 +9,16 @@ class MovieQuizPresenter/*: QuestionFactoryDelegate*/ {
     internal var correctAnswers = 0
     // MARK: - IBOutlet
     // MARK: - Private Properties
-    private var currentQuestionIndex = 0
+     var currentQuestionIndex = 0
     var questionFactory: QuestionFactoryProtocol?
-    
+    private let statisticService: StatisticServiceProtocol = StatisticServiceImplementation()
     // MARK: - Public Methods
     internal func yesButtonClicked() {
-        didAnswer(isYes: true)
+        didAnswer(givenAnswer: true)
     }
     
     internal func noButtonClicked() {
-        didAnswer(isYes: false)
+        didAnswer(givenAnswer: false)
     }
     
     internal func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -55,19 +55,30 @@ class MovieQuizPresenter/*: QuestionFactoryDelegate*/ {
     }
     
     internal func showNextQuestionOrResults() {
-           if self.isLastQuestion() {
-               let text = "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
-               
-               let viewModel = QuizResultsViewModel(
-                   title: "Этот раунд окончен!",
-                   text: text,
-                   buttonText: "Сыграть ещё раз")
-                   viewController?.show(quiz: viewModel)
-           } else {
-               self.switchToNextQuestion()
-               questionFactory?.requestNextQuestion()
-           }
+        if isLastQuestion() {
+
+                  let text = "Вы ответили на \(correctAnswers) из 10, попробуйте еще раз!"
+                  
+                  let viewModel = QuizResultsViewModel(title: "Этот раунд окончен!",
+                                                       text: text,
+                                                       buttonText: "Сыграть ещё раз?")
+                  viewController?.show(quiz: viewModel)
+              } else {
+                  switchToNextQuestion()
+                  questionFactory?.requestNextQuestion()
+              }
        }
+    
+    internal func makeResultMessage() -> String {
+            statisticService.store(correct: correctAnswers, total: questionsAmount)
+            let message = """
+            Ваш результат: \(correctAnswers)/\(questionsAmount)
+            Количество сыгранных квизов: \(statisticService.gamesCount)
+            Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total)(\(statisticService.bestGame.date.dateTimeString))
+            Среедняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
+            """
+            return message
+        }
     
     internal func didAnswer(isCorrect: Bool) {
         if (isCorrect) { correctAnswers += 1 }
@@ -75,10 +86,8 @@ class MovieQuizPresenter/*: QuestionFactoryDelegate*/ {
 
     // MARK: - IBAction
     // MARK: - Private Methods
-    private func didAnswer(isYes: Bool) {
+    private func didAnswer(givenAnswer: Bool) {
         guard let currentQuestion = currentQuestion else { return }
-        let givenAnswer = false
         viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
-    
 }
