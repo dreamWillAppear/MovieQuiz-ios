@@ -1,10 +1,3 @@
-//
-//  MovieQuizUITests.swift
-//  MovieQuizUITests
-//
-//  Created by Богдан Шестаков on 14.01.2024.
-//
-
 import XCTest
 
 final class MovieQuizUITests: XCTestCase {
@@ -19,8 +12,7 @@ final class MovieQuizUITests: XCTestCase {
         app.launch()
         
         continueAfterFailure = false
-        
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+
     }
     
     override func tearDownWithError() throws {
@@ -62,7 +54,7 @@ final class MovieQuizUITests: XCTestCase {
             sleep(1)
         }
         
-        let alert = app.alerts["AlertGameResult"]
+        let alert = app.alerts["GameResult"]
         
         XCTAssertTrue(alert.exists)
         XCTAssertEqual(alert.label, "Этот раунд окончен!")
@@ -77,7 +69,7 @@ final class MovieQuizUITests: XCTestCase {
             sleep(1)
         }
         
-        let alert = app.alerts["AlertGameResult"]
+        let alert = app.alerts["GameResult"]
         alert.buttons.firstMatch.tap()
         sleep(1)
         

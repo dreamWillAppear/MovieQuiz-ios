@@ -1,7 +1,7 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
-
+final class MovieQuizViewController: UIViewController, MovieQuizViewControllerProtocol {
+    
     // MARK: - IBOutlets
     @IBOutlet private var counterLabel: UILabel!
     @IBOutlet private var imageView: UIImageView!
@@ -19,9 +19,8 @@ final class MovieQuizViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         presenter = MovieQuizPresenter(viewController: self)
-        imageView.layer.cornerRadius = 20
         alert = AlertPresenter(viewController: self)
-        statisticService = StatisticServiceImplementation()
+        imageView.layer.cornerRadius = 20
         showLoadingIndicator()
     }
     
@@ -49,73 +48,11 @@ final class MovieQuizViewController: UIViewController {
         }
         alert?.requestAlert(alertModel: alertModel)
     }
-        
-    internal func didReceiveNextQuestion(question: QuizQuestion?) {
-        presenter.didReceiveNextQuestion(question: question)
-    }
     
-    // MARK: - IBActions
-    @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        presenter.yesButtonClicked()
-    }
-    
-    @IBAction private func noButtonClicked(_ sender: UIButton) {
-        presenter.noButtonClicked()
-    }
-    
-    // MARK: - Private Methods
-    private func showNextQuestionOrResults() {
-        
-        guard let gamesCount = statisticService?.gamesCount,
-              let bestGameCorrect = statisticService?.bestGame.correct,
-              let bestGameTotal = statisticService?.bestGame.total,
-              let bestGameDate = statisticService?.bestGame.date.dateTimeString,
-              let totalAccuracy = statisticService?.totalAccuracy
-        else {
-            return
-        }
-        
-        if presenter.isLastQuestion() {
-            statisticService?.store(correct: presenter.correctAnswers, total: presenter.questionsAmount)
-            statisticService?.store(correct: presenter.correctAnswers, total: presenter.questionsAmount)
-            let title = "Этот раунд окончен!"
-            let message = """
-            Ваш результат: \(presenter.correctAnswers)/\(presenter.questionsAmount)
-            Количество сыгранных квизов: \(gamesCount)
-            Рекорд: \(bestGameCorrect)/\(bestGameTotal) (\(bestGameDate))
-            Средняя точноcть: \(String(format: "%.2f", totalAccuracy))%
-            """
-            let buttonText = "Сыграть ещё раз"
-            let id = "AlertGameResult"
-            if let alert {
-                alert.requestAlert(alertModel: AlertModel(title: title, message: message, buttonText: buttonText, id: id, completion: presenter.restartGame))
-            }
-        } else {
-            presenter.switchToNextQuestion()
-            presenter.questionFactory?.requestNextQuestion()
-        }
-    }
-    
-    internal func showAnswerResult(isCorrect: Bool) {
-        disableButtons(true)
+    internal func highlightImageBorder(isCorrect isCorrectAnswer: Bool) {
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
-        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-        presenter.didAnswer(isCorrect: isCorrect)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else { return }
-            self.presenter.showNextQuestionOrResults()
-        }
-    }
-    
-    private func disableButtons(_ mustdisabled: Bool){
-        if mustdisabled {
-            noButton.isEnabled = false
-            yesButton.isEnabled = false
-        } else {
-            noButton.isEnabled = true
-            yesButton.isEnabled = true
-        }
+        imageView.layer.borderColor = isCorrectAnswer ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
     }
     
     internal func showLoadingIndicator() {
@@ -140,5 +77,26 @@ final class MovieQuizViewController: UIViewController {
         
         alert?.requestAlert(alertModel: model)
     }
-
+    
+    // MARK: - IBActions
+    @IBAction private func yesButtonClicked(_ sender: UIButton) {
+        disableButtons(true)
+        presenter.yesButtonClicked()
+    }
+    
+    @IBAction private func noButtonClicked(_ sender: UIButton) {
+        disableButtons(true)
+        presenter.noButtonClicked()
+    }
+    
+    // MARK: - Private Methods
+    private func disableButtons(_ mustdisabled: Bool){
+        if mustdisabled {
+            noButton.isEnabled = false
+            yesButton.isEnabled = false
+        } else {
+            noButton.isEnabled = true
+            yesButton.isEnabled = true
+        }
+    }
 }

@@ -2,17 +2,18 @@ import UIKit
 
 class MovieQuizPresenter: QuestionFactoryDelegate {
     
-    // MARK: - Public Properties
-    private weak var viewController: MovieQuizViewController?
-    internal let questionsAmount = 10
-    internal var currentQuestion: QuizQuestion?
-    internal var correctAnswers = 0
-    internal var currentQuestionIndex = 0
-    internal var questionFactory: QuestionFactoryProtocol?
+    private let statisticService: StatisticServiceProtocol!
+    private var questionFactory: QuestionFactoryProtocol?
+    private weak var viewController: MovieQuizViewControllerProtocol?
+    private let questionsAmount = 10
+    private var currentQuestion: QuizQuestion?
+    private var correctAnswers = 0
+    private var currentQuestionIndex = 0
     
-    init(viewController: MovieQuizViewController) {
+    
+    init(viewController: MovieQuizViewControllerProtocol) {
         self.viewController = viewController
-        
+        statisticService = StatisticServiceImplementation()
         questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         questionFactory?.loadData()
         viewController.showLoadingIndicator()
@@ -40,17 +41,13 @@ class MovieQuizPresenter: QuestionFactoryDelegate {
         }
     }
     
+    // MARK: - Public Methods
     internal func restartGame() {
         currentQuestionIndex = 0
         correctAnswers = 0
         questionFactory?.requestNextQuestion()
     }
     
-    // MARK: - IBOutlet
-    // MARK: - Private Properties
-    
-    private let statisticService: StatisticServiceProtocol = StatisticServiceImplementation()
-    // MARK: - Public Methods
     internal func yesButtonClicked() {
         didAnswer(givenAnswer: true)
     }
@@ -75,23 +72,9 @@ class MovieQuizPresenter: QuestionFactoryDelegate {
         currentQuestionIndex += 1
     }
     
-    internal func showNextQuestionOrResults() {
-        if isLastQuestion() {
-            
-            let text = "Вы ответили на \(correctAnswers) из 10, попробуйте еще раз!"
-            
-            let viewModel = QuizResultsViewModel(title: "Этот раунд окончен!",
-                                                 text: text,
-                                                 buttonText: "Сыграть ещё раз?")
-            viewController?.show(quiz: viewModel)
-        } else {
-            switchToNextQuestion()
-            questionFactory?.requestNextQuestion()
-        }
-    }
-    
     internal func makeResultMessage() -> String {
         statisticService.store(correct: correctAnswers, total: questionsAmount)
+        
         let message = """
             Ваш результат: \(correctAnswers)/\(questionsAmount)
             Количество сыгранных квизов: \(statisticService.gamesCount)
@@ -101,14 +84,41 @@ class MovieQuizPresenter: QuestionFactoryDelegate {
         return message
     }
     
-    internal func didAnswer(isCorrect: Bool) {
+    // MARK: - Private Methods
+    private func proceedToNextQuestionOrResults() {
+        if self.isLastQuestion() {
+            let text = correctAnswers == self.questionsAmount ?
+            "Поздравляем, вы ответили на 10 из 10!" :
+            "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
+            
+            let viewModel = QuizResultsViewModel(
+                title: "Этот раунд окончен!",
+                text: text,
+                buttonText: "Сыграть ещё раз")
+            viewController?.show(quiz: viewModel)
+        } else {
+            questionFactory?.requestNextQuestion()
+            currentQuestionIndex += 1
+        }
+    }
+    
+    private func didAnswer(isCorrect: Bool) {
         if (isCorrect) { correctAnswers += 1 }
     }
     
-    // MARK: - IBAction
-    // MARK: - Private Methods
+    
     private func didAnswer(givenAnswer: Bool) {
         guard let currentQuestion = currentQuestion else { return }
-        viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        proceedWithAnswer(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+    }
+    
+    private func proceedWithAnswer (isCorrect: Bool) {
+        didAnswer(isCorrect: isCorrect)
+        viewController?.highlightImageBorder(isCorrect: isCorrect)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
+            self.proceedToNextQuestionOrResults()
+        }
     }
 }
